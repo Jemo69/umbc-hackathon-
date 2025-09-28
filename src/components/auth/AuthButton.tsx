@@ -10,18 +10,18 @@ interface AuthButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const AuthButton = forwardRef<HTMLButtonElement, AuthButtonProps>(
   ({ children, isLoading = false, fullWidth = false, variant = 'primary', size = 'md', className = '', ...props }, ref) => {
-    const baseClasses = 'flex items-center justify-center font-medium transition-all duration-200 focus-ring interactive disabled:opacity-50 disabled:pointer-events-none';
+    const baseClasses = 'flex items-center justify-center font-bold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background interactive disabled:opacity-60 disabled:pointer-events-none';
     
     const sizeClasses = {
-      sm: 'px-3 py-2 text-label-medium rounded-m3-sm h-10',
-      md: 'px-6 py-3 text-label-large rounded-m3-md h-12',
-      lg: 'px-8 py-4 text-title-small rounded-m3-lg h-14'
+      sm: 'px-4 py-2 text-label-medium rounded-m3-md h-10',
+      md: 'px-6 py-3 text-label-large rounded-m3-lg h-12',
+      lg: 'px-8 py-4 text-title-medium rounded-m3-xl h-14'
     };
     
     const variantClasses = {
-      primary: 'm3-primary shadow-m3-2 hover:shadow-m3-3',
-      secondary: 'm3-secondary shadow-m3-2 hover:shadow-m3-3',
-      outline: 'border-2 border-primary-500 bg-transparent text-primary-600 hover:bg-primary-50 shadow-m3-1 hover:shadow-m3-2'
+      primary: 'bg-primary-600 text-white shadow-m3-2 hover:bg-primary-700 hover:shadow-m3-3 focus-visible:ring-primary-500',
+      secondary: 'bg-secondary-600 text-white shadow-m3-2 hover:bg-secondary-700 hover:shadow-m3-3 focus-visible:ring-secondary-500',
+      outline: 'border-2 border-primary-600 bg-transparent text-primary-600 hover:bg-primary-600/10 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-primary-400/10 focus-visible:ring-primary-500'
     };
     
     return (
