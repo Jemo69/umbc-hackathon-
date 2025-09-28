@@ -615,4 +615,12 @@ const DocumentsPage = () => {
   );
 };
 
-export default DocumentsPage;
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+export default function DocumentsPageWrapper() {
+  return (
+    <ProtectedRoute>
+      <DocumentsPage />
+    </ProtectedRoute>
+  );
+}

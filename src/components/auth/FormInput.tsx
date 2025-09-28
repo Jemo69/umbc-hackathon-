@@ -7,27 +7,35 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, required = false, id, className = '', ...props }, ref) => {
-    const inputId = id || `input-${label.toLowerCase().replace(/\s+/g, '-')}`;
-    
+  ({ label, error, required = false, id, className = "", ...props }, ref) => {
+    const inputId = id || `input-${label.toLowerCase().replace(/\s+/g, "-")}`;
+
     return (
-      <div className="space-y-2">
-        <label 
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
-        >
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
+      <div className="relative">
         <input
           id={inputId}
           ref={ref}
-          className={`block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${className} ${
-            error ? 'border-red-300' : 'border-gray-300'
-          }`}
+          className={`peer block w-full appearance-none rounded-m3-md border bg-transparent px-3 py-4 text-body-large text-on-surface transition-colors duration-300 focus:outline-none focus:ring-2 dark:border-white/20 ${
+            error
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500/30"
+              : "border-outline focus:border-primary-500 focus:ring-primary-500/30"
+          } ${className}`}
+          placeholder=" "
           {...props}
         />
+        <label
+          htmlFor={inputId}
+          className={`absolute left-3 top-4 z-10 origin-[0] -translate-y-7 scale-75 transform text-body-medium duration-300 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-7 peer-focus:scale-75 ${
+            error ? "text-red-500" : "text-on-surface-variant"
+          } peer-focus:text-primary-500`}
+        >
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
         {error && (
-          <p className="mt-1 text-sm text-red-600" id={`${inputId}-error`}>
+          <p
+            className="mt-1 text-body-small text-red-500"
+            id={`${inputId}-error`}
+          >
             {error}
           </p>
         )}

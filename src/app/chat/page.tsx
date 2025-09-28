@@ -358,4 +358,12 @@ const ChatInterface = () => {
   );
 };
 
-export default ChatInterface;
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+export default function ChatPage() {
+  return (
+    <ProtectedRoute>
+      <ChatInterface />
+    </ProtectedRoute>
+  );
+}

@@ -8,24 +8,39 @@ interface AuthButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const AuthButton = forwardRef<HTMLButtonElement, AuthButtonProps>(
-  ({ children, isLoading = false, fullWidth = false, variant = 'primary', className = '', ...props }, ref) => {
+  (
+    {
+      children,
+      isLoading = false,
+      fullWidth = false,
+      variant = "primary",
+      className = "",
+      ...props
+    },
+    ref
+  ) => {
+    const baseClasses =
+      "flex items-center justify-center rounded-m3-xl px-6 py-3 text-label-large font-medium transition-all duration-300 focus:outline-none focus-visible:ring-4 disabled:opacity-60 interactive";
+    const variantClasses = {
+      primary:
+        "bg-primary-500 text-on-primary hover:bg-primary-600 shadow-m3-2 hover:shadow-m3-3 focus-visible:ring-primary-500/30",
+      outline:
+        "border border-outline text-on-surface hover:bg-primary-500/10 focus-visible:ring-primary-500/20 dark:border-outline-variant",
+    };
+
     return (
       <button
         ref={ref}
         disabled={isLoading}
-        className={`flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${
-          variant === 'primary' 
-            ? 'border border-transparent bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
-            : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500'
-        } ${
-          fullWidth ? 'w-full' : ''
+        className={`${baseClasses} ${variantClasses[variant]} ${
+          fullWidth ? "w-full" : ""
         } ${className}`}
         {...props}
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <span>Processing...</span>
           </>
         ) : (
           children

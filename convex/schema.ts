@@ -6,7 +6,12 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     tokenIdentifier: v.string(),
-  }).index("by_token", ["tokenIdentifier"]),
+    passwordResetToken: v.optional(v.string()),
+    passwordResetExpiry: v.optional(v.number()), // Unix timestamp
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_email", ["email"])
+    .index("by_password_reset_token", ["passwordResetToken"]),
   todos: defineTable({
     userId: v.id("users"),
     title: v.string(), // Renamed from 'text' for clarity

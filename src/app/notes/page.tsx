@@ -476,4 +476,12 @@ const NotesPage = () => {
   );
 };
 
-export default NotesPage;
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+
+export default function NotesPageWrapper() {
+  return (
+    <ProtectedRoute>
+      <NotesPage />
+    </ProtectedRoute>
+  );
+}
