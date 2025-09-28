@@ -58,6 +58,10 @@ const config: Config = {
           amber: "#ffc107",
           teal: "#009688",
         },
+        // Map CSS variables to Tailwind color utilities
+        // Enables usage like `bg-background` and `text-on-background`
+        background: "var(--color-background)",
+        "on-background": "var(--color-on-background)",
       },
       fontFamily: {
         sans: ["Inter", "Roboto", "sans-serif"],

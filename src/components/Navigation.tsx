@@ -9,6 +9,7 @@ import {
   FileText,
   MessageSquare,
   Upload,
+  Clock,
   Sparkles,
   Menu,
   X,
@@ -53,6 +54,12 @@ const Navigation: React.FC = () => {
       description: "Organize knowledge",
     },
     {
+      name: "Time",
+      href: "/time",
+      icon: Clock,
+      description: "Pomodoro & planning",
+    },
+    {
       name: "AI Chat",
       href: "/chat",
       icon: MessageSquare,
@@ -78,7 +85,7 @@ const Navigation: React.FC = () => {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden lg:block fixed top-4 left-4 z-40">
+      <nav role="navigation" aria-label="Primary" className="hidden lg:block fixed top-4 left-4 z-40">
         <div className="liquid-glass p-2 rounded-m3-xl border border-surface-200 backdrop-blur-lg">
           <div className="flex flex-col space-y-1">
             {navigationItems.map((item) => {
@@ -87,6 +94,8 @@ const Navigation: React.FC = () => {
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  aria-label={`${item.name} - ${item.description}`}
                   className={`group relative flex items-center space-x-3 px-3 py-2 rounded-m3-lg transition-all duration-200 ${
                     isActive(item.href)
                       ? "m3-primary text-white"
@@ -117,6 +126,9 @@ const Navigation: React.FC = () => {
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="fixed top-4 left-4 z-50 p-3 liquid-glass rounded-m3-lg border border-surface-200 backdrop-blur-lg"
+          aria-label="Open main navigation"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-menu"
         >
           {isMobileMenuOpen ? (
             <X className="w-5 h-5 text-on-surface" />
@@ -132,7 +144,13 @@ const Navigation: React.FC = () => {
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            <div className="fixed top-4 left-4 right-4 z-50 liquid-glass p-6 rounded-m3-xl border border-surface-200 backdrop-blur-lg">
+            <div
+              id="mobile-menu"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Main navigation"
+              className="fixed top-4 left-4 right-4 z-50 liquid-glass p-6 rounded-m3-xl border border-surface-200 backdrop-blur-lg"
+            >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 m3-primary rounded-m3-lg flex items-center justify-center">
@@ -150,7 +168,7 @@ const Navigation: React.FC = () => {
                 </button>
               </div>
 
-              <nav className="space-y-2">
+              <nav role="navigation" aria-label="Primary" className="space-y-2">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -158,6 +176,8 @@ const Navigation: React.FC = () => {
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
+                      aria-current={isActive(item.href) ? "page" : undefined}
+                      aria-label={`${item.name} - ${item.description}`}
                       className={`flex items-center space-x-3 px-4 py-3 rounded-m3-lg transition-all duration-200 ${
                         isActive(item.href)
                           ? "m3-primary text-white"
@@ -224,7 +244,7 @@ const Navigation: React.FC = () => {
 
       {/* Brand/Logo for Desktop */}
       <div className="hidden lg:block fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
-        <Link href="/dashboard">
+        <Link href="/dashboard" aria-label="Go to dashboard home">
           <div className="liquid-glass px-4 py-2 rounded-m3-xl border border-surface-200 backdrop-blur-lg hover:bg-surface-100 transition-colors cursor-pointer">
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 m3-primary rounded-m3-sm flex items-center justify-center">
@@ -245,6 +265,9 @@ const Navigation: React.FC = () => {
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="liquid-glass p-2 rounded-m3-xl border border-surface-200 backdrop-blur-lg hover:bg-surface-100 transition-colors"
+              aria-haspopup="menu"
+              aria-expanded={userMenuOpen}
+              aria-label="User menu"
             >
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">

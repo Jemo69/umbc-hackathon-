@@ -19,23 +19,23 @@ export function AuthLayout({
   footerLinkText,
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-surface-50 to-secondary-50 dark:from-primary-950 dark:via-surface-900 dark:to-secondary-950 flex items-center justify-center p-4 animate-m3-fade-in">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="liquid-glass shadow-glass-lg rounded-m3-2xl p-8 m-4 border border-white/20 dark:border-white/10">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
-            <p className="text-gray-600">{subtitle}</p>
-          </div>
-          
-          <div className="space-y-6">
-            {children}
+            <h1 className="text-display-small font-bold text-on-surface mb-2">
+              {title}
+            </h1>
+            <p className="text-body-large text-on-surface-variant">{subtitle}</p>
           </div>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            {footerText}{' '}
-            <Link 
+          {children}
+
+          <div className="mt-8 text-center text-body-medium text-on-surface-variant">
+            {footerText}{" "}
+            <Link
               href={footerLink}
-              className="font-medium text-primary-600 hover:text-primary-500"
+              className="font-medium text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300"
             >
               {footerLinkText}
             </Link>

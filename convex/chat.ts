@@ -2,36 +2,207 @@ import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 
-// Helper function to get or create a demo user
-async function getDemoUser(ctx: any) {
-  // For demo purposes, use a fixed user ID
-  const demoUserId = "demo-user-123";
-
-  let user = await ctx.db.get(demoUserId as any);
-  if (!user) {
-    // Create a demo user if it doesn't exist
-    user = {
-      _id: demoUserId as any,
-      name: "Demo Student",
-      email: "demo@edutron.com",
-      tokenIdentifier: "demo-token",
-      _creationTime: Date.now(),
-    };
-    await ctx.db.insert("users", user);
+// Helper: get or create the current authenticated user
+async function getOrCreateCurrentUser(ctx: any): Promise<any> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Not authenticated");
   }
-  return user;
+
+  // If running in a query/mutation context (has db), use direct DB access
+  if (ctx.db) {
+    let user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+
+    if (user) return user;
+
+    const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
+    if (identity.name) newUser.name = identity.name;
+    if (identity.email) newUser.email = identity.email;
+    const userId = await ctx.db.insert("users", newUser);
+    return await ctx.db.get(userId);
+  }
+
+  // If running in an action context (no db), use runMutation/runQuery
+  if (ctx.runQuery && ctx.runMutation) {
+    await ctx.runMutation(api.users.store);
+    const user = await ctx.runQuery(api.users.currentUser);
+    if (!user) {
+      throw new Error("User not found after store");
+    }
+    return user;
+  }
+
+  throw new Error("Unsupported context for getOrCreateCurrentUser");
+}
+
+// Safe helper for queries that can run before auth is ready
+async function getCurrentUserOrNull(ctx: any) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  if (ctx.db) {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+    return user;
+  }
+  return null;
 }
 
 export const getChatHistory = query({
-  handler: async (ctx) => {
-    const user = await getDemoUser(ctx);
+  args: { sessionId: v.optional(v.id("chatSessions")) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+    if (!user) return [];
 
-    return await ctx.db
+    let q = ctx.db
       .query("chatHistory")
-      .filter((q) => q.eq(q.field("userId"), user._id))
+      .withIndex("by_userId", (q) => q.eq("userId", user._id));
+    if (args.sessionId) {
+      q = ctx.db
+        .query("chatHistory")
+        .withIndex("by_userId_sessionId", (q) =>
+          q.eq("userId", user._id).eq("sessionId", args.sessionId!),
+        );
+    }
+
+    const items = await q.order("desc").take(200);
+    return items.reverse();
+  },
+});
+
+// Clear all messages for a session (keep the session row)
+export const clearChatSessionMessages = mutation({
+  args: { sessionId: v.id("chatSessions") },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateCurrentUser(ctx);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id)
+      throw new Error("Unauthorized");
+
+    const msgs = await ctx.db
+      .query("chatHistory")
+      .withIndex("by_userId_sessionId", (q) =>
+        q.eq("userId", user._id).eq("sessionId", args.sessionId),
+      )
+      .collect();
+    for (const m of msgs) {
+      await ctx.db.delete(m._id);
+    }
+
+    // Reset session metadata
+    await ctx.db.patch(args.sessionId, {
+      lastMessageAt: undefined,
+      lastMessagePreview: undefined,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Chat sessions APIs
+export const getChatSessions = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+    if (!user) return [];
+    return await ctx.db
+      .query("chatSessions")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .order("desc")
-      .take(50)
-      .then((history) => history.reverse()); // Reverse to show oldest first
+      .collect();
+  },
+});
+
+// Fetch a session only if it belongs to the current user
+export const getSession = query({
+  args: { sessionId: v.id("chatSessions") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q: any) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+    if (!user) return null;
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) return null;
+    return session;
+  },
+});
+
+export const createChatSession = mutation({
+  args: { title: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateCurrentUser(ctx);
+    const now = Date.now();
+    const title = (args.title?.trim() || "New chat").slice(0, 80);
+    return await ctx.db.insert("chatSessions", {
+      userId: user._id,
+      title,
+      createdAt: now,
+      updatedAt: now,
+      lastMessageAt: undefined,
+      lastMessagePreview: undefined,
+    });
+  },
+});
+
+export const renameChatSession = mutation({
+  args: { sessionId: v.id("chatSessions"), title: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateCurrentUser(ctx);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id)
+      throw new Error("Unauthorized");
+    await ctx.db.patch(args.sessionId, {
+      title: args.title.slice(0, 80),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const deleteChatSession = mutation({
+  args: { sessionId: v.id("chatSessions") },
+  handler: async (ctx, args) => {
+    const user = await getOrCreateCurrentUser(ctx);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id)
+      throw new Error("Unauthorized");
+
+    // Delete all messages in this session
+    const msgs = await ctx.db
+      .query("chatHistory")
+      .withIndex("by_userId_sessionId", (q) =>
+        q.eq("userId", user._id).eq("sessionId", args.sessionId),
+      )
+      .collect();
+    for (const m of msgs) {
+      await ctx.db.delete(m._id);
+    }
+    // Delete the session
+    await ctx.db.delete(args.sessionId);
   },
 });
 
@@ -39,12 +210,13 @@ export const addChatMessage = mutation({
   args: {
     message: v.string(),
     isViewer: v.boolean(),
+    sessionId: v.optional(v.id("chatSessions")),
     messageType: v.optional(
       v.union(
         v.literal("text"),
         v.literal("tool_call"),
-        v.literal("tool_result")
-      )
+        v.literal("tool_result"),
+      ),
     ),
     toolCalls: v.optional(
       v.array(
@@ -52,16 +224,17 @@ export const addChatMessage = mutation({
           functionName: v.string(),
           arguments: v.string(),
           result: v.optional(v.string()),
-        })
-      )
+        }),
+      ),
     ),
     context: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     await ctx.db.insert("chatHistory", {
       userId: user._id,
+      sessionId: args.sessionId,
       message: args.message,
       isViewer: args.isViewer,
       timestamp: Date.now(),
@@ -72,151 +245,21 @@ export const addChatMessage = mutation({
   },
 });
 
-// AI Chat with tool calling capabilities
-export const sendChatMessage = action({
-  args: { message: v.string() },
+export const updateChatSessionMeta = mutation({
+  args: {
+    sessionId: v.id("chatSessions"),
+    lastMessageAt: v.optional(v.number()),
+    lastMessagePreview: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
-
-    // Add user message to chat history
-    await ctx.runMutation(api.chat.addChatMessage, {
-      message: args.message,
-      isViewer: true,
-      messageType: "text",
+    const user = await getOrCreateCurrentUser(ctx);
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id)
+      throw new Error("Unauthorized");
+    await ctx.db.patch(args.sessionId, {
+      updatedAt: Date.now(),
+      lastMessageAt: args.lastMessageAt,
+      lastMessagePreview: args.lastMessagePreview,
     });
-
-    // Simulate AI response with tool calling
-    const aiResponse = await generateAIResponse(args.message, ctx);
-
-    // Add AI response to chat history
-    await ctx.runMutation(api.chat.addChatMessage, {
-      message: aiResponse.message,
-      isViewer: false,
-      messageType: aiResponse.messageType,
-      toolCalls: aiResponse.toolCalls,
-      context: aiResponse.context,
-    });
-
-    return aiResponse;
   },
 });
-
-// Simulate AI response generation with tool calling
-async function generateAIResponse(userMessage: string, ctx: any) {
-  // This is a simplified AI simulation - in production, you'd integrate with OpenAI, Anthropic, etc.
-
-  const message = userMessage.toLowerCase();
-
-  // Check for task creation requests
-  if (
-    message.includes("add task") ||
-    message.includes("create task") ||
-    message.includes("remind me")
-  ) {
-    const taskTitle = extractTaskTitle(userMessage);
-    const dueDate = extractDueDate(userMessage);
-
-    // Simulate tool call
-    const toolCalls = [
-      {
-        functionName: "addTask",
-        arguments: JSON.stringify({
-          title: taskTitle,
-          dueDate: dueDate,
-          estimatedTime: 60,
-          context: userMessage,
-        }),
-      },
-    ];
-
-    return {
-      message: `I've added "${taskTitle}" to your task list${
-        dueDate
-          ? ` with a due date of ${new Date(dueDate).toLocaleDateString()}`
-          : ""
-      }. Would you like me to set any specific priority or subject for this task?`,
-      messageType: "tool_call" as const,
-      toolCalls,
-      context: userMessage,
-    };
-  }
-
-  // Check for note creation requests
-  if (
-    message.includes("save") ||
-    message.includes("note") ||
-    message.includes("remember")
-  ) {
-    const noteTitle = extractNoteTitle(userMessage);
-    const noteContent = extractNoteContent(userMessage);
-
-    const toolCalls = [
-      {
-        functionName: "addNote",
-        arguments: JSON.stringify({
-          title: noteTitle,
-          content: noteContent,
-          context: userMessage,
-        }),
-      },
-    ];
-
-    return {
-      message: `I've saved "${noteTitle}" to your notes. You can find it in your notes section.`,
-      messageType: "tool_call" as const,
-      toolCalls,
-      context: userMessage,
-    };
-  }
-
-  // Default AI responses
-  const responses = [
-    "I'm here to help you with your studies! I can create tasks, save notes, analyze documents, and answer questions about your coursework. What would you like to work on?",
-    "That's a great question! I can help you break down complex topics, create study plans, or organize your assignments. What subject are you working on?",
-    "I'm your AI study assistant! I can help you stay organized, understand difficult concepts, and manage your academic workload. How can I assist you today?",
-  ];
-
-  return {
-    message: responses[Math.floor(Math.random() * responses.length)],
-    messageType: "text" as const,
-    toolCalls: undefined,
-    context: userMessage,
-  };
-}
-
-// Helper functions for text extraction
-function extractTaskTitle(message: string): string {
-  // Simple extraction - in production, use more sophisticated NLP
-  const words = message.split(" ");
-  const taskWords = words.filter(
-    (word) =>
-      !["add", "create", "task", "remind", "me", "to", "about"].includes(
-        word.toLowerCase()
-      )
-  );
-  return taskWords.join(" ") || "New Task";
-}
-
-function extractDueDate(message: string): number | undefined {
-  // Simple date extraction - in production, use a proper date parser
-  if (message.includes("tomorrow")) {
-    return Date.now() + 24 * 60 * 60 * 1000;
-  }
-  if (message.includes("next week")) {
-    return Date.now() + 7 * 24 * 60 * 60 * 1000;
-  }
-  // Add more date parsing logic
-  return undefined;
-}
-
-function extractNoteTitle(message: string): string {
-  const words = message.split(" ");
-  const noteWords = words.filter(
-    (word) => !["save", "note", "remember", "that"].includes(word.toLowerCase())
-  );
-  return noteWords.slice(0, 5).join(" ") || "New Note";
-}
-
-function extractNoteContent(message: string): string {
-  return message; // In production, extract more meaningful content
-}
