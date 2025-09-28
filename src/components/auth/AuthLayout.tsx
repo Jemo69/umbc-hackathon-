@@ -20,11 +20,11 @@ export function AuthLayout({
 }: AuthLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-surface-100 dark:from-background dark:to-surface-900 flex items-center justify-center p-4 overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary-500/10 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-secondary-500/10 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute inset-0 z-0 motion-reduce:hidden" aria-hidden="true">
+        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary-500/10 rounded-full filter blur-3xl motion-safe:animate-pulse"></div>
+        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-secondary-500/10 rounded-full filter blur-3xl motion-safe:animate-pulse" style={{ animationDelay: '1000ms' }}></div>
       </div>
-      <div className="w-full max-w-md animate-m3-slide-up z-10">
+      <div className="w-full max-w-md motion-safe:animate-m3-slide-up z-10">
         <div className="bg-white/60 dark:bg-surface-950/60 backdrop-blur-glass-lg rounded-m3-2xl p-8 m-4 border border-white/30 dark:border-white/10 shadow-glass-lg">
           <div className="text-center mb-8">
             <h1 className="text-headline-medium font-bold text-on-surface mb-2">

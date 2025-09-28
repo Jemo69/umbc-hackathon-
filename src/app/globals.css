@@ -238,25 +238,41 @@ body {
   background: var(--color-outline-variant);
 }
 
-/* Animation Classes */
-.animate-m3-bounce {
-  animation: m3-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
+/* Animation Classes - Respects user preference for reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-m3-bounce {
+    animation: m3-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
 
-.animate-m3-fade-in {
-  animation: m3-fade-in 0.3s ease-out;
-}
+  .animate-m3-fade-in {
+    animation: m3-fade-in 0.3s ease-out;
+  }
 
-.animate-m3-slide-up {
-  animation: m3-slide-up 0.3s ease-out;
-}
+  .animate-m3-slide-up {
+    animation: m3-slide-up 0.3s ease-out;
+  }
 
-.animate-m3-scale {
-  animation: m3-scale 0.2s ease-out;
-}
+  .animate-m3-scale {
+    animation: m3-scale 0.2s ease-out;
+  }
 
-.animate-glass-shimmer {
-  animation: glass-shimmer 2s ease-in-out infinite;
+  .animate-glass-shimmer {
+    animation: glass-shimmer 2s ease-in-out infinite;
+  }
+
+  .interactive {
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elevation-4);
+  }
+
+  .interactive:active {
+    transform: translateY(0);
+    box-shadow: var(--elevation-2);
+  }
 }
 
 /* Ambient Mode Styles */
