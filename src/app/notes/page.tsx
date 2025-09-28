@@ -18,9 +18,10 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { type Doc, type Id } from "../../../convex/_generated/dataModel";
 
 // Note Card Component
-const NoteCard = ({ note }: { note: any }) => {
+const NoteCard = ({ note }: { note: Doc<"notes"> }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const documents = useQuery(api.documents.getDocuments, {});
   const deleteNote = useMutation(api.notes.deleteNote);
@@ -90,7 +91,7 @@ const NoteCard = ({ note }: { note: any }) => {
         {note.documentRef && (
           <div className="mb-4">
             {(() => {
-              const doc = documents?.find((d: any) => d._id === note.documentRef);
+              const doc = documents?.find((d) => d._id === note.documentRef);
               return (
                 <Link
                   href={`/documents?documentId=${note.documentRef}`}
@@ -155,6 +156,7 @@ const NoteForm = ({ onNoteCreated, initialDocumentId = "" }: { onNoteCreated: ()
   const [isExpanded, setIsExpanded] = useState(false);
 
   const createNote = useMutation(api.notes.createNote);
+  const documents = useQuery(api.documents.getDocuments, {});
   const [selectedDocumentId, setSelectedDocumentId] = useState<string>(initialDocumentId);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,7 +174,7 @@ const NoteForm = ({ onNoteCreated, initialDocumentId = "" }: { onNoteCreated: ()
       content: content.trim(),
       subject: subject.trim() || undefined,
       tags: tagsArray,
-      documentRef: selectedDocumentId || undefined,
+      documentRef: (selectedDocumentId as Id<"documents">) || undefined,
     });
 
     setTitle("");

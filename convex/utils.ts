@@ -27,6 +27,10 @@ export async function getOrCreateUser(ctx: AnyCtx): Promise<Doc<"users">> {
 
     if (user) return user as Doc<"users">;
 
+    if (!("insert" in ctx.db)) {
+      throw new Error("User not found and cannot be created in read-only context.");
+    }
+
     const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
     if (identity.name) newUser.name = identity.name;
     if (identity.email) newUser.email = identity.email;

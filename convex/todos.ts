@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { withUserQuery, withUserMutation } from "./utils";
+import { type Doc } from "./_generated/dataModel";
 
 
 export const getTasks = withUserQuery({
@@ -83,7 +84,10 @@ export const updateTask = withUserMutation({
   handler: async (ctx, args, user) => {
     const { id, ...rest } = args;
 
-    const existingTask = await ctx.db.get(id);
+    const existingTask = await ctx.db
+      .query("todos")
+      .filter((q) => q.eq(q.field("_id"), id))
+      .first();
     if (!existingTask || existingTask.userId !== user._id) {
       throw new Error("Task not found or unauthorized");
     }
@@ -95,7 +99,10 @@ export const updateTask = withUserMutation({
 export const deleteTask = withUserMutation({
   args: { id: v.id("todos") },
   handler: async (ctx, args, user) => {
-    const existingTask = await ctx.db.get(args.id);
+    const existingTask = await ctx.db
+      .query("todos")
+      .filter((q) => q.eq(q.field("_id"), args.id))
+      .first();
     if (!existingTask || existingTask.userId !== user._id) {
       throw new Error("Task not found or unauthorized");
     }

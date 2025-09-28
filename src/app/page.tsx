@@ -2,7 +2,15 @@ import React from "react";
 import Image from 'next/image'
 // --- Icon Component Definitions (Using Inline SVG for Lucide-like icons) ---
 
-const Icon = ({ children, className = "w-6 h-6", color = "currentColor" }) => (
+const Icon = ({
+  children,
+  className = "w-6 h-6",
+  color = "currentColor",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  color?: string;
+}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -17,7 +25,12 @@ const Icon = ({ children, className = "w-6 h-6", color = "currentColor" }) => (
   </svg>
 );
 
-const BrainIcon = (props) => (
+type IconProps = {
+  className?: string;
+  color?: string;
+};
+
+const BrainIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M12 16c-3.3 0-6.1-2.2-7.5-5.5.4-2.8 1.4-5 3.3-6.5 2.1-1.7 4.8-2.5 7.7-1.4 3.4 1.3 5.4 4 5.2 7.4-.1 2.3-1 4.5-2.5 6.2-1.9 2.1-4.7 3.3-7.7 3.3z" />
     <path d="M12 2v20" />
@@ -28,14 +41,14 @@ const BrainIcon = (props) => (
   </Icon>
 );
 
-const CheckCircleIcon = (props) => (
+const CheckCircleIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
     <path d="M22 4L12 14.01l-3-3" />
   </Icon>
 );
 
-const BarChartIcon = (props) => (
+const BarChartIcon = (props: IconProps) => (
   <Icon {...props}>
     <line x1="12" y1="20" x2="12" y2="10" />
     <line x1="18" y1="20" x2="18" y2="4" />
@@ -43,7 +56,7 @@ const BarChartIcon = (props) => (
   </Icon>
 );
 
-const ServerIcon = (props) => (
+const ServerIcon = (props: IconProps) => (
   <Icon {...props}>
     <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
     <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
@@ -52,14 +65,14 @@ const ServerIcon = (props) => (
   </Icon>
 );
 
-const GraduationCapIcon = (props) => (
+const GraduationCapIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M21.4 15.6l-5.8-5.7L12 13.8l-3.6-3.9-5.8 5.7c-.4.4-.6 1-.6 1.6s.2 1.2.6 1.6l10 10c.4.4 1 .6 1.6.6s1.2-.2 1.6-.6l10-10c.4-.4.6-1 .6-1.6s-.2-1.2-.6-1.6z" />
     <path d="M12 2l10 10-10 10L2 12z" />
   </Icon>
 );
 
-const UsersIcon = (props) => (
+const UsersIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
     <circle cx="9" cy="7" r="4" />
@@ -68,13 +81,13 @@ const UsersIcon = (props) => (
   </Icon>
 );
 
-const ShieldIcon = (props) => (
+const ShieldIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </Icon>
 );
 
-const QuoteIcon = (props) => (
+const QuoteIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M10 11H7a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3v3l5-4.5-5-4.5zM19 11h-3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3v3l5-4.5-5-4.5z" />
   </Icon>

@@ -20,6 +20,7 @@ import {
   Users,
   Award,
 } from "lucide-react";
+import { type Doc } from "../../../convex/_generated/dataModel";
 
 // Liquid Glass Navigation Component
 const LiquidGlassNav = () => {
@@ -200,7 +201,7 @@ const QuickActionCard = ({
 );
 
 // Task Preview Component
-const TaskPreview = ({ task }: { task: any }) => (
+const TaskPreview = ({ task }: { task: Doc<"todos"> }) => (
   <div className="liquid-glass p-4 rounded-m3-lg border border-surface-200 hover:border-primary-300 transition-colors">
     <div className="flex items-start justify-between mb-2">
       <h4 className="text-title-small text-on-surface font-medium flex-1">
@@ -208,9 +209,9 @@ const TaskPreview = ({ task }: { task: any }) => (
       </h4>
       <div
         className={`w-2 h-2 rounded-full ml-2 ${
-          task.priorityScore > 7
+          (task.priorityScore ?? 0) > 7
             ? "bg-red-500"
-            : task.priorityScore > 4
+            : (task.priorityScore ?? 0) > 4
             ? "bg-yellow-500"
             : "bg-green-500"
         }`}
@@ -264,7 +265,8 @@ const Dashboard = () => {
 
   // Mock data for demonstration
   const stats = {
-    completedTasks: tasks?.filter((t) => t.completed).length || 0,
+    completedTasks:
+      tasks?.filter((t: Doc<"todos">) => t.completed).length || 0,
     totalTasks: tasks?.length || 0,
     studyStreak: 7,
     maxStreak: 30,
@@ -398,7 +400,7 @@ const Dashboard = () => {
               </h2>
               <div className="space-y-4">
                 {recentTasks.length > 0 ? (
-                  recentTasks.map((task) => (
+                  recentTasks.map((task: Doc<"todos">) => (
                     <TaskPreview key={task._id} task={task} />
                   ))
                 ) : (
@@ -421,7 +423,7 @@ const Dashboard = () => {
               </h2>
               <div className="space-y-4">
                 {recentNotes.length > 0 ? (
-                  recentNotes.map((note) => (
+                  recentNotes.map((note: Doc<"notes">) => (
                     <div
                       key={note._id}
                       className="liquid-glass p-4 rounded-m3-lg border border-surface-200"

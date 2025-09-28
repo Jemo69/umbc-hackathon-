@@ -93,7 +93,13 @@ function ResetPasswordForm() {
         footerText="Need help?"
         footerLink="/forgot-password"
         footerLinkText="Request a new link"
-      />
+      >
+        <div className="text-center">
+          <p className="text-body-large text-on-surface-variant">
+            Please return to the forgot password page to request a new link.
+          </p>
+        </div>
+      </AuthLayout>
     );
   }
 
