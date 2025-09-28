@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 
 // Helper: get or create the current authenticated user
-async function getOrCreateCurrentUser(ctx: any): any {
+async function getOrCreateCurrentUser(ctx: any): Promise<any> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Not authenticated");
