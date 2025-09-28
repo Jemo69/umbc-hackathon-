@@ -45,3 +45,6 @@ export const currentUser = query(async (ctx) => {
     )
     .unique();
 });
+
+// Alias for easier import
+export const getCurrentUser = currentUser;

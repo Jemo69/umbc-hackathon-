@@ -1,10 +1,6 @@
-
-import { customCtx, customQuery } from "./_generated/server";
-import { v } from "convex/values";
-
-export const isAuthenticated = customQuery({
-  args: {},
-  handler: async (ctx) => {
-    return !!ctx.viewer;
-  },
+import { convexAuth } from "@convex-dev/auth/server";
+import { Password } from "@convex-dev/auth/providers/Password";
+import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers: [Password, Anonymous],
 });

@@ -16,6 +16,8 @@ import type {
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as documents from "../documents.js";
+import type * as http from "../http.js";
+import type * as notes from "../notes.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
@@ -31,6 +33,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chat: typeof chat;
   documents: typeof documents;
+  http: typeof http;
+  notes: typeof notes;
   todos: typeof todos;
   users: typeof users;
 }>;
