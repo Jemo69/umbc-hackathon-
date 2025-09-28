@@ -1,24 +1,27 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-// Helper function to get or create a demo user
-async function getDemoUser(ctx: any) {
-  // For demo purposes, use a fixed user ID
-  const demoUserId = "demo-user-123";
-
-  let user = await ctx.db.get(demoUserId as any);
-  if (!user) {
-    // Create a demo user if it doesn't exist
-    user = {
-      _id: demoUserId as any,
-      name: "Demo Student",
-      email: "demo@edutron.com",
-      tokenIdentifier: "demo-token",
-      _creationTime: Date.now(),
-    };
-    await ctx.db.insert("users", user);
+// Helper: get or create the current authenticated user
+async function getOrCreateCurrentUser(ctx: any) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Not authenticated");
   }
-  return user;
+
+  let user = await ctx.db
+    .query("users")
+    .withIndex("by_token", (q: any) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier)
+    )
+    .unique();
+
+  if (user) return user;
+
+  const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
+  if (identity.name) newUser.name = identity.name;
+  if (identity.email) newUser.email = identity.email;
+  const userId = await ctx.db.insert("users", newUser);
+  return await ctx.db.get(userId);
 }
 
 export const getNotes = query({
@@ -27,7 +30,7 @@ export const getNotes = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     let notes = ctx.db
       .query("notes")
@@ -53,7 +56,7 @@ export const getNotes = query({
 export const getNote = query({
   args: { noteId: v.id("notes") },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     const note = await ctx.db.get(args.noteId);
 
@@ -75,7 +78,7 @@ export const createNote = mutation({
     context: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
     const now = Date.now();
 
     const noteId = await ctx.db.insert("notes", {
@@ -105,7 +108,7 @@ export const updateNote = mutation({
     context: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
     const { noteId, ...updates } = args;
 
     const existingNote = await ctx.db.get(noteId);
@@ -123,7 +126,7 @@ export const updateNote = mutation({
 export const deleteNote = mutation({
   args: { noteId: v.id("notes") },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     const existingNote = await ctx.db.get(args.noteId);
     if (!existingNote || existingNote.userId !== user._id) {
@@ -140,7 +143,7 @@ export const searchNotes = query({
     subject: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     let notes = await ctx.db
       .query("notes")

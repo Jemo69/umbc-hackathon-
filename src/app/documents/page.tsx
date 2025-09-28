@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import {
   FileText,
@@ -415,6 +415,7 @@ const DocumentsPage = () => {
 
   const documents = useQuery(api.documents.getDocuments, {});
   const addDocument = useMutation(api.documents.addDocument);
+  const processDocument = useAction(api.documents.processDocument);
 
   // Filter documents
   const filteredDocuments =
@@ -441,12 +442,20 @@ const DocumentsPage = () => {
     // For now, we'll simulate with a mock storage ID
     const mockStorageId = `mock-${Date.now()}-${file.name}`;
 
-    await addDocument({
+    const documentId = await addDocument({
       storageId: mockStorageId,
       name: file.name,
       type: file.type.split("/")[1] || "unknown",
       size: file.size,
     });
+
+    // Kick off real AI analysis in the background
+    try {
+      await processDocument({ documentId });
+    } catch (e) {
+      // Swallow action errors on client to avoid blocking UI; status will show as failed if it does
+      console.error("processDocument action failed", e);
+    }
 
     setShowUpload(false);
   };

@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FileText,
   Plus,
@@ -20,6 +22,7 @@ import {
 // Note Card Component
 const NoteCard = ({ note }: { note: any }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const documents = useQuery(api.documents.getDocuments, {});
   const deleteNote = useMutation(api.notes.deleteNote);
 
   const handleDelete = () => {
@@ -70,18 +73,36 @@ const NoteCard = ({ note }: { note: any }) => {
 
           {/* Tags */}
           {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {note.tags.map((tag: string, index: number) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2 py-1 rounded-m3-sm bg-secondary-50 text-secondary-700 text-body-small font-medium"
+          <div className="flex flex-wrap gap-2 mb-4">
+            {note.tags.map((tag: string, index: number) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-2 py-1 rounded-m3-sm bg-secondary-50 text-secondary-700 text-body-small font-medium"
+              >
+                <Tag className="w-3 h-3 mr-1" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Attached Document */}
+        {note.documentRef && (
+          <div className="mb-4">
+            {(() => {
+              const doc = documents?.find((d: any) => d._id === note.documentRef);
+              return (
+                <Link
+                  href={`/documents?documentId=${note.documentRef}`}
+                  className="inline-flex items-center px-2 py-1 rounded-m3-sm bg-primary-50 text-primary-700 text-body-small font-medium hover:bg-primary-100"
                 >
-                  <Tag className="w-3 h-3 mr-1" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+                  <FileText className="w-3 h-3 mr-1" />
+                  {doc ? `Attached: ${doc.name}` : "Attached document"}
+                </Link>
+              );
+            })()}
+          </div>
+        )}
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-body-small text-on-surface-variant">
@@ -126,7 +147,7 @@ const NoteCard = ({ note }: { note: any }) => {
 };
 
 // Note Form Component
-const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
+const NoteForm = ({ onNoteCreated, initialDocumentId = "" }: { onNoteCreated: () => void; initialDocumentId?: string }) => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [subject, setSubject] = useState("");
@@ -134,6 +155,7 @@ const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const createNote = useMutation(api.notes.createNote);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string>(initialDocumentId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +172,7 @@ const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
       content: content.trim(),
       subject: subject.trim() || undefined,
       tags: tagsArray,
+      documentRef: selectedDocumentId || undefined,
     });
 
     setTitle("");
@@ -157,6 +180,7 @@ const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
     setSubject("");
     setTags("");
     setIsExpanded(false);
+    setSelectedDocumentId("");
     onNoteCreated();
   };
 
@@ -263,6 +287,35 @@ const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
                 Separate tags with commas
               </p>
             </div>
+
+            {/* Attach Document */}
+            <div className="md:col-span-2">
+              <label
+                htmlFor="note-document"
+                className="block text-body-medium font-medium text-on-surface mb-2"
+              >
+                Attach Document (optional)
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+                <select
+                  id="note-document"
+                  value={selectedDocumentId}
+                  onChange={(e) => setSelectedDocumentId(e.target.value)}
+                  className="w-full pl-10 pr-3 py-3 liquid-glass border border-surface-200 rounded-m3-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-colors text-body-large text-on-surface placeholder:text-on-surface-variant"
+                >
+                  <option value="">No document</option>
+                  {documents?.map((doc) => (
+                    <option key={doc._id} value={doc._id}>
+                      {doc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-body-small text-on-surface-variant mt-1">
+                Link this note to an uploaded document
+              </p>
+            </div>
           </div>
         )}
 
@@ -284,6 +337,8 @@ const NoteForm = ({ onNoteCreated }: { onNoteCreated: () => void }) => {
 
 // Main Notes Page
 const NotesPage = () => {
+  const searchParams = useSearchParams();
+  const preselectedDocumentId = (searchParams?.get("documentId") as string) || "";
   const [filter, setFilter] = useState<"all" | string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "title" | "subject">(
@@ -352,7 +407,7 @@ const NotesPage = () => {
           </div>
         </div>
         {/* Note Form */}
-        <NoteForm onNoteCreated={() => {}} />
+        <NoteForm onNoteCreated={() => {}} initialDocumentId={preselectedDocumentId} />
 
         {/* Filters and Search */}
         <div className="m3-surface p-6 mb-8">

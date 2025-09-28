@@ -10,6 +10,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@/components/auth/FormInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const storeUser = useMutation(api.users.store);
 
   const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
 
@@ -46,6 +49,8 @@ export default function LoginPage() {
       formData.append('flow', 'signIn');
 
       await signIn('password', formData);
+      // Ensure a corresponding user document exists in our Convex users table
+      await storeUser();
       router.push(redirectTo);
     } catch (error) {
       console.error('Login error:', error);

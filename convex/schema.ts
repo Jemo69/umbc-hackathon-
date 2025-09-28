@@ -1,11 +1,14 @@
 import { defineSchema, defineTable } from "convex/server";
+import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // Include Convex Auth tables (users, accounts, sessions, etc.) and indexes
+  ...authTables,
   users: defineTable({
-    name: v.string(),
-    email: v.string(),
-    tokenIdentifier: v.string(),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    tokenIdentifier: v.optional(v.string()),
     passwordResetToken: v.optional(v.string()),
     passwordResetExpiry: v.optional(v.number()), // Unix timestamp
   })
@@ -86,6 +89,7 @@ export default defineSchema({
     .index("by_userId_subject", ["userId", "subject"]),
   chatHistory: defineTable({
     userId: v.id("users"),
+    sessionId: v.optional(v.id("chatSessions")),
     message: v.string(),
     isViewer: v.boolean(),
     timestamp: v.number(),
@@ -106,7 +110,19 @@ export default defineSchema({
       )
     ),
     context: v.optional(v.string()),
-  }),
+  })
+    .index("by_userId", ["userId"]) 
+    .index("by_userId_sessionId", ["userId", "sessionId"]),
+  chatSessions: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastMessageAt: v.optional(v.number()),
+    lastMessagePreview: v.optional(v.string()),
+  })
+    .index("by_userId", ["userId"]) 
+    .index("by_userId_updatedAt", ["userId", "updatedAt"]),
   notes: defineTable({
     userId: v.id("users"),
     title: v.string(),

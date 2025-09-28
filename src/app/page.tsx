@@ -1,6 +1,5 @@
-
 import React from "react";
-
+import Image from 'next/image'
 // --- Icon Component Definitions (Using Inline SVG for Lucide-like icons) ---
 
 const Icon = ({ children, className = "w-6 h-6", color = "currentColor" }) => (
@@ -22,7 +21,7 @@ const BrainIcon = (props) => (
   <Icon {...props}>
     <path d="M12 16c-3.3 0-6.1-2.2-7.5-5.5.4-2.8 1.4-5 3.3-6.5 2.1-1.7 4.8-2.5 7.7-1.4 3.4 1.3 5.4 4 5.2 7.4-.1 2.3-1 4.5-2.5 6.2-1.9 2.1-4.7 3.3-7.7 3.3z" />
     <path d="M12 2v20" />
-    <path d="M16.5 10.5c.3 1.5.1 3-1 4.5-.4.6-.9 1.1-1.5 1.4" />
+   <path d="M16.5 10.5c.3 1.5.1 3-1 4.5-.4.6-.9 1.1-1.5 1.4" />
     <path d="M7.5 13.5c-.3-1.5-.1-3 1-4.5.4-.6.9-1.1 1.5-1.4" />
     <path d="M7 16c1.5.4 3.1.2 4.5-1 1.2-1.1 2-2.7 2-4.5" />
     <path d="M17 16c-1.5.4-3.1.2-4.5-1-1.2-1.1-2-2.7-2-4.5" />
@@ -116,7 +115,7 @@ const Nav = () => (
 
       {/* CTA Button */}
       <a
-        href="#trial"
+        href="/sign-up"
         className={`px-5 py-2 hidden md:block text-white font-semibold rounded-full ${accentBg} ${accentHoverBg} transition-all shadow-lg hover:shadow-xl`}
       >
         Start Free Trial
@@ -163,13 +162,13 @@ const Hero = () => (
           {/* CTAs */}
           <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
             <a
-              href="#trial"
+              href="/sign-up"
               className={`px-8 py-3 text-lg font-bold text-white rounded-full ${accentBg} ${accentHoverBg} transition-all shadow-xl shadow-orange-200`}
             >
               Start Your Free Trial
             </a>
             <a
-              href="#demo"
+              href="/sign-up"
               className="px-8 py-3 text-lg font-bold text-blue-600 bg-white border-2 border-blue-200 rounded-full hover:bg-blue-50 transition-colors shadow-md"
             >
               Watch a Demo
@@ -185,9 +184,9 @@ const Hero = () => (
         {/* Visual Placeholder */}
         <div className="col-span-12 lg:col-span-6 flex justify-center lg:justify-end">
           <div className="w-full max-w-md lg:max-w-none bg-blue-100/50 aspect-[4/3] rounded-3xl p-6 shadow-2xl shadow-blue-200/50 border-4 border-white/50 flex items-center justify-center">
-            <p className="text-xl text-blue-800 font-semibold">
-              [Modern Dashboard UI Placeholder]
-            </p>
+                        <img src="https://8331whtezt.ufs.sh/f/KXoBapOHo7mgrPMwohqyC9FtHK0PJcEVlLeIwTAaSQr5NOmW" 
+                        alt ="Main dashboard ui "
+                        />
           </div>
         </div>
       </div>
@@ -352,7 +351,7 @@ const FinalCTA = () => (
 
       <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
         <a
-          href="#"
+          href="/sign-up"
           className={`px-10 py-4 text-xl font-bold text-white rounded-full ${accentBg} ${accentHoverBg} transition-all shadow-xl shadow-orange-500/50 transform hover:scale-[1.05]`}
         >
           Get Started Today

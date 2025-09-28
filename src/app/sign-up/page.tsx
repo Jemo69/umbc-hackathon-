@@ -10,6 +10,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@/components/auth/FormInput';
 import { AuthButton } from '@/components/auth/AuthButton';
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -28,6 +30,7 @@ export default function SignUpPage() {
   const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const storeUser = useMutation(api.users.store);
 
   const {
     register,
@@ -49,6 +52,8 @@ export default function SignUpPage() {
       formData.append('flow', 'signUp');
       
       await signIn('password', formData);
+      // Ensure a corresponding user document exists in our Convex users table
+      await storeUser();
       router.push('/dashboard');
     } catch (error) {
       console.error('Sign up error:', error);

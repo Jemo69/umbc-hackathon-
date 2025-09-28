@@ -2,24 +2,27 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 
-// Helper function to get or create a demo user
-async function getDemoUser(ctx: any) {
-  // For demo purposes, use a fixed user ID
-  const demoUserId = "demo-user-123";
-
-  let user = await ctx.db.get(demoUserId as any);
-  if (!user) {
-    // Create a demo user if it doesn't exist
-    user = {
-      _id: demoUserId as any,
-      name: "Demo Student",
-      email: "demo@edutron.com",
-      tokenIdentifier: "demo-token",
-      _creationTime: Date.now(),
-    };
-    await ctx.db.insert("users", user);
+// Helper: get or create the current authenticated user
+async function getOrCreateCurrentUser(ctx: any) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    throw new Error("Not authenticated");
   }
-  return user;
+
+  let user = await ctx.db
+    .query("users")
+    .withIndex("by_token", (q: any) =>
+      q.eq("tokenIdentifier", identity.tokenIdentifier)
+    )
+    .unique();
+
+  if (user) return user;
+
+  const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
+  if (identity.name) newUser.name = identity.name;
+  if (identity.email) newUser.email = identity.email;
+  const userId = await ctx.db.insert("users", newUser);
+  return await ctx.db.get(userId);
 }
 
 export const getTasks = query({
@@ -30,7 +33,7 @@ export const getTasks = query({
     sortByPriority: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     let tasks = ctx.db
       .query("todos")
@@ -71,7 +74,7 @@ export const createTask = mutation({
     isGeneratedByAI: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     const taskId = await ctx.db.insert("todos", {
       userId: user._id,
@@ -105,7 +108,7 @@ export const updateTask = mutation({
     isGeneratedByAI: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
     const { id, ...rest } = args;
 
     const existingTask = await ctx.db.get(id);
@@ -120,7 +123,7 @@ export const updateTask = mutation({
 export const deleteTask = mutation({
   args: { id: v.id("todos") },
   handler: async (ctx, args) => {
-    const user = await getDemoUser(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
 
     const existingTask = await ctx.db.get(args.id);
     if (!existingTask || existingTask.userId !== user._id) {
