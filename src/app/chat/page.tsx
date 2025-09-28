@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useAction, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { MarkdownRenderer} from "../time/page"
 import { Id } from "../../../convex/_generated/dataModel";
 import {
   Send,
@@ -60,13 +61,9 @@ const ChatMessage = ({
               : "bg-white/80 border-surface-200"
           }`}
         >
-          <p
-            className={`text-body-large ${
-              isUser ? "text-on-surface" : "text-on-surface"
-            }`}
-          >
-            {message.message}
-          </p>
+          <div aria-live="polite">
+            <MarkdownRenderer value={message.message || ""} />
+          </div>
 
           {/* Tool Calls Display */}
           {message.toolCalls && message.toolCalls.length > 0 && (
@@ -322,6 +319,7 @@ const ChatInterface = () => {
                     const id = await createSession({ title: "New chat" });
                     setActiveSessionId(id);
                   }}
+                  aria-label="Create new chat session"
                 >
                   New
                 </button>
@@ -344,26 +342,28 @@ const ChatInterface = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <button
-                          className="text-body-small px-2 py-1 rounded-m3-sm bg-surface-100"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const title = prompt("Rename session", s.title) || s.title;
-                            await renameSession({ sessionId: s._id, title });
-                          }}
+                        className="text-body-small px-2 py-1 rounded-m3-sm bg-surface-100"
+                        onClick={async (e) => {
+                        e.stopPropagation();
+                        const title = prompt("Rename session", s.title) || s.title;
+                        await renameSession({ sessionId: s._id, title });
+                        }}
+                        aria-label={`Rename session ${s.title}`}
                         >
-                          Rename
+                        Rename
                         </button>
                         <button
-                          className="text-body-small px-2 py-1 rounded-m3-sm bg-red-50 text-red-700"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (confirm("Delete this session?")) {
-                              await deleteSession({ sessionId: s._id });
-                              if (activeSessionId === s._id) setActiveSessionId(undefined);
-                            }
-                          }}
+                        className="text-body-small px-2 py-1 rounded-m3-sm bg-red-50 text-red-700"
+                        onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm("Delete this session?")) {
+                        await deleteSession({ sessionId: s._id });
+                        if (activeSessionId === s._id) setActiveSessionId(undefined);
+                        }
+                        }}
+                        aria-label={`Delete session ${s.title}`}
                         >
-                          Del
+                        Del
                         </button>
                       </div>
                     </div>
@@ -426,6 +426,7 @@ const ChatInterface = () => {
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder="Ask me anything about your studies..."
+                      aria-label="Chat input"
                       className="w-full p-3 sm:p-3.5 liquid-glass border border-surface-200 rounded-m3-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-colors text-body-medium sm:text-body-large text-on-surface placeholder:text-on-surface-variant"
                       disabled={isLoading}
                     />
@@ -434,6 +435,7 @@ const ChatInterface = () => {
                     type="submit"
                     disabled={!inputMessage.trim() || isLoading}
                     className="w-11 h-11 sm:w-12 sm:h-12 m3-primary rounded-m3-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed interactive"
+                    aria-label="Send message"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Send className="w-5 h-5 text-white" />}
                   </button>

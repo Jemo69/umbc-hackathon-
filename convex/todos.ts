@@ -1,40 +1,15 @@
-import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { Doc, Id } from "./_generated/dataModel";
+import { withUserQuery, withUserMutation } from "./utils";
 
-// Helper: get or create the current authenticated user
-async function getOrCreateCurrentUser(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Not authenticated");
-  }
 
-  let user = await ctx.db
-    .query("users")
-    .withIndex("by_token", (q: any) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .unique();
-
-  if (user) return user;
-
-  const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
-  if (identity.name) newUser.name = identity.name;
-  if (identity.email) newUser.email = identity.email;
-  const userId = await ctx.db.insert("users", newUser);
-  return await ctx.db.get(userId);
-}
-
-export const getTasks = query({
+export const getTasks = withUserQuery({
   args: {
     completed: v.optional(v.boolean()),
     subject: v.optional(v.string()),
     sortByDueDate: v.optional(v.boolean()),
     sortByPriority: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
-
+  handler: async (ctx, args, user) => {
     let tasks = ctx.db
       .query("todos")
       .withIndex("by_userId", (q) => q.eq("userId", user._id));
@@ -61,7 +36,7 @@ export const getTasks = query({
   },
 });
 
-export const createTask = mutation({
+export const createTask = withUserMutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
@@ -73,9 +48,7 @@ export const createTask = mutation({
     context: v.optional(v.string()),
     isGeneratedByAI: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
-
+  handler: async (ctx, args, user) => {
     const taskId = await ctx.db.insert("todos", {
       userId: user._id,
       title: args.title,
@@ -93,7 +66,7 @@ export const createTask = mutation({
   },
 });
 
-export const updateTask = mutation({
+export const updateTask = withUserMutation({
   args: {
     id: v.id("todos"),
     title: v.optional(v.string()),
@@ -107,8 +80,7 @@ export const updateTask = mutation({
     context: v.optional(v.string()),
     isGeneratedByAI: v.optional(v.boolean()),
   },
-  handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+  handler: async (ctx, args, user) => {
     const { id, ...rest } = args;
 
     const existingTask = await ctx.db.get(id);
@@ -120,11 +92,9 @@ export const updateTask = mutation({
   },
 });
 
-export const deleteTask = mutation({
+export const deleteTask = withUserMutation({
   args: { id: v.id("todos") },
-  handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
-
+  handler: async (ctx, args, user) => {
     const existingTask = await ctx.db.get(args.id);
     if (!existingTask || existingTask.userId !== user._id) {
       throw new Error("Task not found or unauthorized");

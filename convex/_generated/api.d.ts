@@ -22,6 +22,7 @@ import type * as notes from "../notes.js";
 import type * as password from "../password.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
+import type * as utils from "../utils.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   password: typeof password;
   todos: typeof todos;
   users: typeof users;
+  utils: typeof utils;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

@@ -1,8 +1,6 @@
 import { action } from "./_generated/server";
-import * as dotenv from "dotenv";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-dotenv.config();
 
 // Helper: get or create the current authenticated user
 async function getOrCreateCurrentUser(ctx: any): Promise<any> {
@@ -45,11 +43,12 @@ async function getOrCreateCurrentUser(ctx: any): Promise<any> {
 // AI response generation with OpenRouter or OpenAI
 async function generateAIResponse(userMessage: string, ctx: any) {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const hasOpenRouter = !!openRouterKey;
-  if (!hasOpenRouter) {
+  const openAIApiKey = process.env.OPENAI_API_KEY;
+  const hasAI = !!openRouterKey || !!openAIApiKey;
+  if (!hasAI) {
     return {
       message:
-        "no ai api key configured. set openrouter_api_key (preferred) or openai_api_key to enable ai responses.",
+        "No AI API key configured. Set OPENROUTER_API_KEY (preferred) or OPENAI_API_KEY to enable AI responses.",
       messageType: "text" as const,
       toolCalls: undefined,
       context: userMessage,
@@ -126,21 +125,59 @@ async function generateAIResponse(userMessage: string, ctx: any) {
     };
   }
 
+  // Time management and scheduling intent
+  if (
+    msg.includes("plan my day") ||
+    msg.includes("plan my time") ||
+    msg.includes("schedule") ||
+    msg.includes("time management") ||
+    msg.includes("study plan") ||
+    msg.includes("focus plan") ||
+    msg.includes("pomodoro")
+  ) {
+    const availableMinutes = extractAvailableMinutes(userMessage) ?? 120;
+    const startTime = Date.now();
+    const toolCalls = [
+      {
+        functionName: "planTime",
+        arguments: JSON.stringify({
+          availableMinutes,
+          startTime,
+          context: userMessage,
+        }),
+      },
+    ];
+    return {
+      message: `i've drafted a ${Math.round(
+        availableMinutes
+      )} minute study plan starting now. want to adjust the start time or subjects?`,
+      messageType: "tool_call" as const,
+      toolCalls,
+      context: userMessage,
+    };
+  }
+
   // 2) otherwise, call openai for a general helpful response
   try {
-    const useOpenRouter = hasOpenRouter && process.env.openrouter_api_key;
-    const model = "x-ai/grok-4-fast:free";
+    const useOpenRouter = !!openRouterKey;
+    const model = useOpenRouter
+      ? process.env.CHAT_MODEL || "x-ai/grok-4-fast:free"
+      : process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini";
 
-    const url = "https://openrouter.ai/api/v1/chat/completions";
+    const url = useOpenRouter
+      ? "https://openrouter.ai/api/v1/chat/completions"
+      : "https://api.openai.com/v1/chat/completions";
 
     const headers: Record<string, string> = {
       "content-type": "application/json",
-      authorization: `bearer ${openRouterKey}`,
+      authorization: `Bearer ${useOpenRouter ? openRouterKey : openAIApiKey}`,
     };
     // optional but recommended for openrouter:
     if (useOpenRouter) {
-      headers["http-referer"] = process.env.site_url || "http://localhost";
-      headers["x-title"] = process.env.site_name || "edutron";
+      headers["http-referer"] =
+        process.env.SITE_URL || process.env.site_url || "http://localhost";
+      headers["x-title"] =
+        process.env.SITE_NAME || process.env.site_name || "edutron";
     }
 
     const res = await fetch(url, {
@@ -219,6 +256,28 @@ function extractNoteContent(message: string): string {
   return message; // In production, extract more meaningful content
 }
 
+function extractAvailableMinutes(message: string): number | undefined {
+  // look for patterns like "2 hours", "90 minutes", or just a number + h/m
+  const lower = message.toLowerCase();
+  const hourMatch = lower.match(/(\d+(?:\.\d+)?)\s*(hour|hours|hr|hrs|h)\b/);
+  if (hourMatch) {
+    const hours = parseFloat(hourMatch[1]);
+    if (!isNaN(hours)) return Math.round(hours * 60);
+  }
+  const minMatch = lower.match(/(\d+)\s*(minute|minutes|min|mins|m)\b/);
+  if (minMatch) {
+    const mins = parseInt(minMatch[1], 10);
+    if (!isNaN(mins)) return mins;
+  }
+  // fallback: a bare number might mean minutes if followed by nothing obvious
+  const bare = lower.match(/\b(\d{2,3})\b/);
+  if (bare) {
+    const mins = parseInt(bare[1], 10);
+    if (!isNaN(mins)) return mins;
+  }
+  return undefined;
+}
+
 export const sendChatMessage: any = action({
   args: { message: v.string(), sessionId: v.optional(v.id("chatSessions")) },
   handler: async (ctx, args) => {
@@ -291,13 +350,92 @@ export const sendChatMessage: any = action({
               documentRef: parsed.documentRef,
               context: parsed.context,
             });
+          } else if (tool.functionName === "planTime") {
+            // Generate a simple time-blocked plan from current tasks
+            const availableMinutes =
+              Number(parsed.availableMinutes) > 0 ? Number(parsed.availableMinutes) : 120;
+            const startTime =
+              typeof parsed.startTime === "number" ? parsed.startTime : Date.now();
+
+            const tasks = await ctx.runQuery(api.todos.getTasks, {
+              completed: false,
+              sortByDueDate: true,
+            });
+
+            // Rank tasks: sooner due dates first, then higher priority, then longer remaining effort
+            const ranked = [...tasks].sort((a: any, b: any) => {
+              const dueA = a.dueDate ?? Infinity;
+              const dueB = b.dueDate ?? Infinity;
+              if (dueA !== dueB) return dueA - dueB;
+              const prA = a.priorityScore ?? 0;
+              const prB = b.priorityScore ?? 0;
+              if (prA !== prB) return prB - prA;
+              const effA = a.estimatedEffort ?? 30;
+              const effB = b.estimatedEffort ?? 30;
+              return effB - effA;
+            });
+
+            // Build plan with 45m focus blocks and 10m breaks
+            const plan: any[] = [];
+            let cursor = startTime;
+            let minutesLeft = availableMinutes;
+
+            for (const t of ranked) {
+              if (minutesLeft <= 0) break;
+              let effort = Math.max(15, Math.min(120, t.estimatedEffort ?? 45));
+              while (effort > 0 && minutesLeft > 0) {
+                const block = Math.min(45, effort, minutesLeft);
+                plan.push({
+                  type: "focus",
+                  taskId: t._id,
+                  title: t.title,
+                  subject: t.subject,
+                  start: cursor,
+                  end: cursor + block * 60_000,
+                  minutes: block,
+                });
+                cursor += block * 60_000;
+                minutesLeft -= block;
+                effort -= block;
+
+                // Add a 10m break if time remains and still working
+                if (effort > 0 && minutesLeft > 0) {
+                  const breakMin = Math.min(10, minutesLeft);
+                  plan.push({
+                    type: "break",
+                    start: cursor,
+                    end: cursor + breakMin * 60_000,
+                    minutes: breakMin,
+                  });
+                  cursor += breakMin * 60_000;
+                  minutesLeft -= breakMin;
+                }
+              }
+            }
+
+            result = { plan, summary: `Planned ${availableMinutes - minutesLeft} of ${availableMinutes} minutes.` };
           }
 
           // Store tool_result message
-          await ctx.runMutation(api.chat.addChatMessage, {
-            message: result
+          let displayMessage =
+            result
               ? `Tool ${tool.functionName} executed successfully.`
-              : `Tool ${tool.functionName} executed.`,
+              : `Tool ${tool.functionName} executed.`;
+          if (tool.functionName === "planTime" && (result as any)?.plan?.length) {
+            const lines = (result as any).plan
+              .map((b: any) => {
+                const start = new Date(b.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                const end = new Date(b.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                if (b.type === "focus") {
+                  return `${start}-${end}: Focus on "${b.title}" (${b.subject || "General"}) for ${b.minutes}m`;
+                }
+                return `${start}-${end}: Break (${b.minutes}m)`;
+              })
+              .join("\n");
+            displayMessage = `Here is your time-blocked plan:\n${lines}`;
+          }
+          await ctx.runMutation(api.chat.addChatMessage, {
+            message: displayMessage,
             isViewer: false,
             sessionId,
             messageType: "tool_result",
@@ -305,7 +443,7 @@ export const sendChatMessage: any = action({
               {
                 functionName: tool.functionName,
                 arguments: JSON.stringify(parsed),
-                result: JSON.stringify({ id: result }),
+                result: JSON.stringify(result ?? {}),
               },
             ],
             context: aiResponse.context,
