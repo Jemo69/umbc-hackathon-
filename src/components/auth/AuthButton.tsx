@@ -19,8 +19,8 @@ export const AuthButton = forwardRef<HTMLButtonElement, AuthButtonProps>(
     };
     
     const variantClasses = {
-      primary: 'bg-primary-600 text-white shadow-m3-2 hover:bg-primary-700 hover:shadow-m3-3 focus-visible:ring-primary-500',
-      secondary: 'bg-secondary-600 text-white shadow-m3-2 hover:bg-secondary-700 hover:shadow-m3-3 focus-visible:ring-secondary-500',
+      primary: 'bg-primary-800 text-white shadow-m3-2 hover:bg-primary-900 hover:shadow-m3-3 focus-visible:ring-primary-500',
+      secondary: 'bg-secondary-800 text-white shadow-m3-2 hover:bg-secondary-900 hover:shadow-m3-3 focus-visible:ring-secondary-500',
       outline: 'border-2 border-primary-600 bg-transparent text-primary-600 hover:bg-primary-600/10 dark:text-primary-400 dark:border-primary-400 dark:hover:bg-primary-400/10 focus-visible:ring-primary-500'
     };
     

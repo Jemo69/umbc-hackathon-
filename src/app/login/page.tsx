@@ -83,7 +83,7 @@ function LoginForm() {
     >
       {authError && (
         <div
-          className="rounded-m3-md bg-red-500/20 p-4 mb-6 border border-red-500/30"
+          className="rounded-m3-md bg-red-100 p-4 mb-6 border border-red-200"
           role="alert"
           aria-live="assertive"
           aria-atomic="true"
@@ -93,7 +93,7 @@ function LoginForm() {
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-300"
+                className="h-5 w-5 text-red-600"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -105,7 +105,7 @@ function LoginForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-200">{authError}</h3>
+              <h3 className="text-sm font-medium text-red-800">{authError}</h3>
             </div>
           </div>
         </div>
@@ -150,7 +150,7 @@ function LoginForm() {
             <div className="text-right mt-3">
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300 focus-ring rounded"
+                className="text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 transition-colors duration-300 focus-ring rounded"
               >
                 Forgot password?
               </Link>
