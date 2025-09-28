@@ -72,11 +72,11 @@ export default function SignUpPage() {
       footerLinkText="Sign in"
     >
       {authError && (
-        <div className="rounded-m3-md bg-red-500/10 p-4 mb-6 border border-red-500/20">
+        <div className="rounded-m3-md bg-red-100 p-4 mb-6 border border-red-200">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-400"
+                className="h-5 w-5 text-red-600"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -88,7 +88,7 @@ export default function SignUpPage() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-200">{authError}</h3>
+              <h3 className="text-sm font-medium text-red-800">{authError}</h3>
             </div>
           </div>
         </div>
@@ -142,12 +142,12 @@ export default function SignUpPage() {
             />
             <label
               htmlFor="agree-terms"
-              className="ml-3 block text-sm text-on-surface-variant"
+              className="ml-3 block text-sm text-gray-700 dark:text-gray-300"
             >
               I agree to the{" "}
               <Link
                 href="/terms"
-                className="font-medium text-primary-500 hover:text-primary-600"
+                className="font-medium text-primary-600 hover:text-primary-700"
               >
                 Terms of Service
               </Link>

@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import Link from "next/link";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormInput } from "@/components/auth/FormInput";
 import { AuthButton } from "@/components/auth/AuthButton";
@@ -28,6 +28,13 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const storeUser = useMutation(api.users.store);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (authError && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [authError]);
 
   const redirectTo = searchParams?.get("redirectTo") || "/dashboard";
 
@@ -35,6 +42,7 @@ function LoginForm() {
     register,
     handleSubmit,
     formState: { errors },
+    setFocus,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
@@ -60,6 +68,11 @@ function LoginForm() {
     }
   };
 
+  const onInvalid = (errors: FieldErrors<LoginFormData>) => {
+    const firstField = errors.email ? "email" : errors.password ? "password" : undefined;
+    if (firstField) setFocus(firstField);
+  };
+
   return (
     <AuthLayout
       title="Welcome Back"
@@ -69,11 +82,18 @@ function LoginForm() {
       footerLinkText="Sign up now"
     >
       {authError && (
-        <div className="rounded-m3-md bg-red-500/20 p-4 mb-6 border border-red-500/30">
+        <div
+          className="rounded-m3-md bg-red-100 p-4 mb-6 border border-red-200"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          tabIndex={-1}
+          ref={errorRef}
+        >
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-300"
+                className="h-5 w-5 text-red-600"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -85,19 +105,31 @@ function LoginForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-200">{authError}</h3>
+              <h3 className="text-sm font-medium text-red-800">{authError}</h3>
             </div>
           </div>
         </div>
       )}
 
       <div className="space-y-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
+          className="space-y-8"
+          aria-busy={isLoading}
+          aria-describedby="login-instructions"
+        >
+          <p id="login-instructions" className="sr-only">
+            All fields are required. Enter your email address and password to sign in.
+          </p>
           <FormInput
             id="email"
             label="Email address"
             type="email"
+            inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoFocus
             required
             error={errors.email?.message}
             {...register("email")}
@@ -109,6 +141,8 @@ function LoginForm() {
               label="Password"
               type="password"
               autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
               required
               error={errors.password?.message}
               {...register("password")}
@@ -116,7 +150,7 @@ function LoginForm() {
             <div className="text-right mt-3">
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300 focus-ring rounded"
+                className="text-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 transition-colors duration-300 focus-ring rounded"
               >
                 Forgot password?
               </Link>
@@ -134,8 +168,15 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<Loader2 className="animate-spin" />}>
-      <LoginForm />
-    </Suspense>
+  <Suspense
+  fallback={
+  <div role="status" aria-live="polite" className="flex items-center gap-2">
+  <Loader2 className="animate-spin" aria-hidden="true" />
+  <span>Loading sign-in form...</span>
+  </div>
+  }
+  >
+  <LoginForm />
+  </Suspense>
   );
 }
