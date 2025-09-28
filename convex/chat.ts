@@ -1,60 +1,8 @@
 import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-
-// Helper: get or create the current authenticated user
-async function getOrCreateCurrentUser(ctx: any): Promise<any> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Not authenticated");
-  }
-
-  // If running in a query/mutation context (has db), use direct DB access
-  if (ctx.db) {
-    let user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-
-    if (user) return user;
-
-    const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
-    if (identity.name) newUser.name = identity.name;
-    if (identity.email) newUser.email = identity.email;
-    const userId = await ctx.db.insert("users", newUser);
-    return await ctx.db.get(userId);
-  }
-
-  // If running in an action context (no db), use runMutation/runQuery
-  if (ctx.runQuery && ctx.runMutation) {
-    await ctx.runMutation(api.users.store);
-    const user = await ctx.runQuery(api.users.currentUser);
-    if (!user) {
-      throw new Error("User not found after store");
-    }
-    return user;
-  }
-
-  throw new Error("Unsupported context for getOrCreateCurrentUser");
-}
-
-// Safe helper for queries that can run before auth is ready
-async function getCurrentUserOrNull(ctx: any) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) return null;
-  if (ctx.db) {
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-    return user;
-  }
-  return null;
-}
+import { getOrCreateUser } from "./utils";
+import { type Id } from "./_generated/dataModel";
 
 export const getChatHistory = query({
   args: { sessionId: v.optional(v.id("chatSessions")) },
@@ -89,7 +37,7 @@ export const getChatHistory = query({
 export const clearChatSessionMessages = mutation({
   args: { sessionId: v.id("chatSessions") },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const session = await ctx.db.get(args.sessionId);
     if (!session || session.userId !== user._id)
       throw new Error("Unauthorized");
@@ -110,6 +58,42 @@ export const clearChatSessionMessages = mutation({
       lastMessagePreview: undefined,
       updatedAt: Date.now(),
     });
+  },
+});
+
+export const sendChatMessage = action({
+  args: {
+    message: v.string(),
+    sessionId: v.optional(v.id("chatSessions")),
+  },
+  handler: async (
+    ctx,
+    args
+  ): Promise<{ sessionId: Id<"chatSessions">; message: string }> => {
+    const user = await getOrCreateUser(ctx);
+
+    let sessionId = args.sessionId;
+    if (!sessionId) {
+      sessionId = await ctx.runMutation(api.chat.createChatSession, {
+        title: args.message.substring(0, 40),
+      });
+    }
+
+    await ctx.runMutation(api.chat.addChatMessage, {
+      message: args.message,
+      isViewer: true,
+      sessionId,
+    });
+
+    // Mock AI Response
+    const mockMessage = "This is a mock response from the Edutron Assistant.";
+    await ctx.runMutation(api.chat.addChatMessage, {
+      message: mockMessage,
+      isViewer: false,
+      sessionId,
+    });
+
+    return { sessionId, message: mockMessage };
   },
 });
 
@@ -155,7 +139,7 @@ export const getSession = query({
 export const createChatSession = mutation({
   args: { title: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const now = Date.now();
     const title = (args.title?.trim() || "New chat").slice(0, 80);
     return await ctx.db.insert("chatSessions", {
@@ -172,7 +156,7 @@ export const createChatSession = mutation({
 export const renameChatSession = mutation({
   args: { sessionId: v.id("chatSessions"), title: v.string() },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const session = await ctx.db.get(args.sessionId);
     if (!session || session.userId !== user._id)
       throw new Error("Unauthorized");
@@ -186,7 +170,7 @@ export const renameChatSession = mutation({
 export const deleteChatSession = mutation({
   args: { sessionId: v.id("chatSessions") },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const session = await ctx.db.get(args.sessionId);
     if (!session || session.userId !== user._id)
       throw new Error("Unauthorized");
@@ -230,7 +214,7 @@ export const addChatMessage = mutation({
     context: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     await ctx.db.insert("chatHistory", {
       userId: user._id,
@@ -252,7 +236,7 @@ export const updateChatSessionMeta = mutation({
     lastMessagePreview: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const session = await ctx.db.get(args.sessionId);
     if (!session || session.userId !== user._id)
       throw new Error("Unauthorized");

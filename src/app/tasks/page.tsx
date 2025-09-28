@@ -14,6 +14,7 @@ import {
   Search,
   SortAsc,
 } from "lucide-react";
+import { Doc } from "../../../convex/_generated/dataModel";
 
 const TasksPage: React.FC = () => {
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
@@ -31,14 +32,16 @@ const TasksPage: React.FC = () => {
   // Filter tasks by search query
   const filteredTasks =
     tasks?.filter(
-      (task) =>
+      (task: Doc<"todos">) =>
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.subject?.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-  const completedCount = tasks?.filter((t) => t.completed).length || 0;
-  const pendingCount = tasks?.filter((t) => !t.completed).length || 0;
+  const completedCount =
+    tasks?.filter((t: Doc<"todos">) => t.completed).length || 0;
+  const pendingCount =
+    tasks?.filter((t: Doc<"todos">) => !t.completed).length || 0;
   const totalCount = tasks?.length || 0;
 
   return (
@@ -140,7 +143,9 @@ const TasksPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            filteredTasks.map((task) => <TaskItem key={task._id} task={task} />)
+            filteredTasks.map((task: Doc<"todos">) => (
+              <TaskItem key={task._id} task={task} />
+            ))
           )}
         </div>
 
@@ -171,7 +176,8 @@ const TasksPage: React.FC = () => {
               </h3>
               <p className="text-headline-small text-secondary-600 font-bold">
                 {tasks.reduce(
-                  (acc, task) => acc + (task.estimatedEffort || 0),
+                  (acc: number, task: Doc<"todos">) =>
+                    acc + (task.estimatedEffort || 0),
                   0
                 )}
                 m
@@ -188,7 +194,7 @@ const TasksPage: React.FC = () => {
               <p className="text-headline-small text-accent-orange font-bold">
                 {
                   tasks.filter(
-                    (task) =>
+                    (task: Doc<"todos">) =>
                       !task.completed &&
                       task.dueDate &&
                       new Date(task.dueDate) <=

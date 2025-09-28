@@ -404,7 +404,7 @@ function StatsPanel() {
 // ---------------------------------------------
 
 function AIPlanner() {
-  const sendMessage = useAction(api.ai.sendChatMessage);
+  const sendMessage = useAction(api.chat.sendChatMessage);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [response, setResponse] = useState<string>("");

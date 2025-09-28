@@ -1,34 +1,35 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthActions } from '@convex-dev/auth/react';
-import Link from 'next/link';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from '@/components/auth/FormInput';
-import { AuthButton } from '@/components/auth/AuthButton';
-import { AuthLayout } from '@/components/auth/AuthLayout';
-import { useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthActions } from "@convex-dev/auth/react";
+import Link from "next/link";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FormInput } from "@/components/auth/FormInput";
+import { AuthButton } from "@/components/auth/AuthButton";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
-  const [authError, setAuthError] = useState('');
+  const [authError, setAuthError] = useState("");
   const storeUser = useMutation(api.users.store);
 
-  const redirectTo = searchParams?.get('redirectTo') || '/dashboard';
+  const redirectTo = searchParams?.get("redirectTo") || "/dashboard";
 
   const {
     register,
@@ -40,21 +41,21 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setAuthError('');
+    setAuthError("");
 
     try {
       const formData = new FormData();
-      formData.append('email', data.email);
-      formData.append('password', data.password);
-      formData.append('flow', 'signIn');
+      formData.append("email", data.email);
+      formData.append("password", data.password);
+      formData.append("flow", "signIn");
 
-      await signIn('password', formData);
+      await signIn("password", formData);
       // Ensure a corresponding user document exists in our Convex users table
       await storeUser();
       router.push(redirectTo);
     } catch (error) {
-      console.error('Login error:', error);
-      setAuthError('Invalid email or password. Please try again.');
+      console.error("Login error:", error);
+      setAuthError("Invalid email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -177,5 +178,13 @@ export default function LoginPage() {
         </div>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Loader2 className="animate-spin" />}>
+      <LoginForm />
+    </Suspense>
   );
 }
