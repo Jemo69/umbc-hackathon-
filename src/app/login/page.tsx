@@ -50,7 +50,6 @@ function LoginForm() {
       formData.append("flow", "signIn");
 
       await signIn("password", formData);
-      // Ensure a corresponding user document exists in our Convex users table
       await storeUser();
       router.push(redirectTo);
     } catch (error) {
@@ -63,18 +62,18 @@ function LoginForm() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to your account to continue"
+      title="Welcome Back"
+      subtitle="Sign in to access your dashboard"
       footerText="Don't have an account?"
       footerLink="/sign-up"
-      footerLinkText="Sign up"
+      footerLinkText="Sign up now"
     >
       {authError && (
-        <div className="rounded-m3-md bg-red-500/10 p-4 mb-6 border border-red-500/20">
+        <div className="rounded-m3-md bg-red-500/20 p-4 mb-6 border border-red-500/30">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-400"
+                className="h-5 w-5 text-red-300"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -114,21 +113,20 @@ function LoginForm() {
               error={errors.password?.message}
               {...register("password")}
             />
-            <div className="text-right mt-2">
+            <div className="text-right mt-3">
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
+                className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-300 focus-ring rounded"
               >
                 Forgot password?
               </Link>
             </div>
           </div>
 
-          <AuthButton type="submit" isLoading={isLoading} fullWidth>
-            Sign in
+          <AuthButton type="submit" isLoading={isLoading} fullWidth size="md">
+            Sign In
           </AuthButton>
         </form>
-
       </div>
     </AuthLayout>
   );
