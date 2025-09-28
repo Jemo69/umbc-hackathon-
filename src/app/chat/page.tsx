@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useAction, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import {
   Send,
   Bot,
@@ -145,7 +146,7 @@ const ChatInterface = () => {
   // Sessions
   const sessions = useQuery(
     api.chat.getChatSessions,
-    isAuthenticated ? {} : undefined
+    isAuthenticated ? {} : "skip"
   );
   const createSession = useMutation(api.chat.createChatSession);
   const renameSession = useMutation(api.chat.renameChatSession);
@@ -154,9 +155,9 @@ const ChatInterface = () => {
   // Messages scoped by session (if selected)
   const chatHistory = useQuery(
     api.chat.getChatHistory,
-    isAuthenticated ? (activeSessionId ? { sessionId: activeSessionId } : {}) : undefined
+    isAuthenticated ? (activeSessionId ? { sessionId: activeSessionId as Id<"chatSessions"> } : {}) : "skip"
   );
-  const sendMessage = useAction(api.chat.sendChatMessage);
+  const sendMessage = useAction(api.ai.sendChatMessage);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -444,8 +445,7 @@ const ChatInterface = () => {
       </div>
     </div>
   );
-}
-;
+};
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
