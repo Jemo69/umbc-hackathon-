@@ -62,6 +62,11 @@ const config: Config = {
         // Enables usage like `bg-background` and `text-on-background`
         background: "var(--color-background)",
         "on-background": "var(--color-on-background)",
+        surface: "var(--color-surface)",
+        "on-surface": "var(--color-on-surface)",
+        "surface-variant": "var(--color-surface-variant)",
+        "on-surface-variant": "var(--color-on-surface-variant)",
+        outline: "var(--color-outline)",
       },
       fontFamily: {
         sans: ["Inter", "Roboto", "sans-serif"],
