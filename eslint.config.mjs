@@ -18,9 +18,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "src/**"
-      "convex/**"
-       "./**"
+      "src/**",
+      "convex/**",
+       "./**",
+       "**/*",
     ],
   },
 "rules": {
