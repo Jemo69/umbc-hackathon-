@@ -4,36 +4,32 @@ import { Loader2 } from 'lucide-react';
 interface AuthButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
   fullWidth?: boolean;
-  variant?: 'primary' | 'outline';
+  variant?: 'primary' | 'outline' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const AuthButton = forwardRef<HTMLButtonElement, AuthButtonProps>(
-  (
-    {
-      children,
-      isLoading = false,
-      fullWidth = false,
-      variant = "primary",
-      className = "",
-      ...props
-    },
-    ref
-  ) => {
-    const baseClasses =
-      "flex items-center justify-center rounded-m3-xl px-6 py-3 text-label-large font-medium transition-all duration-300 focus:outline-none focus-visible:ring-4 disabled:opacity-60 interactive";
-    const variantClasses = {
-      primary:
-        "bg-primary-500 text-on-primary hover:bg-primary-600 shadow-m3-2 hover:shadow-m3-3 focus-visible:ring-primary-500/30",
-      outline:
-        "border border-outline text-on-surface hover:bg-primary-500/10 focus-visible:ring-primary-500/20 dark:border-outline-variant",
+  ({ children, isLoading = false, fullWidth = false, variant = 'primary', size = 'md', className = '', ...props }, ref) => {
+    const baseClasses = 'flex items-center justify-center font-medium transition-all duration-200 focus-ring interactive disabled:opacity-50 disabled:pointer-events-none';
+    
+    const sizeClasses = {
+      sm: 'px-3 py-2 text-label-medium rounded-m3-sm h-10',
+      md: 'px-6 py-3 text-label-large rounded-m3-md h-12',
+      lg: 'px-8 py-4 text-title-small rounded-m3-lg h-14'
     };
-
+    
+    const variantClasses = {
+      primary: 'm3-primary shadow-m3-2 hover:shadow-m3-3',
+      secondary: 'm3-secondary shadow-m3-2 hover:shadow-m3-3',
+      outline: 'border-2 border-primary-500 bg-transparent text-primary-600 hover:bg-primary-50 shadow-m3-1 hover:shadow-m3-2'
+    };
+    
     return (
       <button
         ref={ref}
-        disabled={isLoading}
-        className={`${baseClasses} ${variantClasses[variant]} ${
-          fullWidth ? "w-full" : ""
+        disabled={isLoading || props.disabled}
+        className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${
+          fullWidth ? 'w-full' : ''
         } ${className}`}
         {...props}
       >
