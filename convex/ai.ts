@@ -2,6 +2,7 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { getOrCreateUser } from "./utils";
+import { type Id } from "./_generated/dataModel";
 
 // AI response generation with OpenRouter or OpenAI
 async function generateAIResponse(userMessage: string, ctx: any) {
@@ -243,8 +244,17 @@ function extractAvailableMinutes(message: string): number | undefined {
 
 export const sendChatMessage = action({
   args: { message: v.string(), sessionId: v.optional(v.id("chatSessions")) },
-  handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+  handler: async (
+    ctx,
+    args
+  ): Promise<{
+    message: string;
+    messageType: "text" | "tool_call";
+    toolCalls: any[] | undefined;
+    context: string;
+    sessionId: Id<"chatSessions">;
+  }> => {
+    const user = await getOrCreateUser(ctx);
 
     // Ensure a session exists (auto-create if not provided)
     let sessionId = args.sessionId;
@@ -441,4 +451,3 @@ export const sendChatMessage = action({
     return { ...aiResponse, sessionId };
   },
 });
-
