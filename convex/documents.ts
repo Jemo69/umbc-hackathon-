@@ -5,7 +5,7 @@ import { getOrCreateUser } from "./utils";
 
 export const getDocuments = query({
   handler: async (ctx) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     return await ctx.db
       .query("documents")
@@ -49,7 +49,7 @@ export const setDocumentAnalysis = mutation({
     }),
   },
   handler: async (ctx, args): Promise<void> => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
     const document = await ctx.db.get(args.documentId);
     if (!document || document.userId !== user._id) {
       throw new Error("Document not found or unauthorized");
@@ -67,7 +67,7 @@ export const processDocument = action({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
     // Ensure user exists and owns the doc
-    await getOrCreateCurrentUser(ctx);
+    await getOrCreateUser(ctx);
     const document = await ctx.runQuery(api.documents.getDocument, {
       documentId: args.documentId,
     });
@@ -163,7 +163,7 @@ export const addDocument = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     const documentId = await ctx.db.insert("documents", {
       userId: user._id,
@@ -193,7 +193,7 @@ export const addDocument = mutation({
 export const getDocument = query({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     const document = await ctx.db.get(args.documentId);
 
@@ -213,7 +213,7 @@ export const updateDocument = mutation({
     tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     const document = await ctx.db.get(args.documentId);
     if (!document || document.userId !== user._id) {
@@ -228,7 +228,7 @@ export const updateDocument = mutation({
 export const deleteDocument = mutation({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {
-    const user = await getOrCreateCurrentUser(ctx);
+    const user = await getOrCreateUser(ctx);
 
     const document = await ctx.db.get(args.documentId);
     if (!document || document.userId !== user._id) {
