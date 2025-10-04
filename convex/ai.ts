@@ -1,44 +1,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-
-// Helper: get or create the current authenticated user
-async function getOrCreateCurrentUser(ctx: any): Promise<any> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Not authenticated");
-  }
-
-  // If running in a query/mutation context (has db), use direct DB access
-  if (ctx.db) {
-    let user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-
-    if (user) return user;
-
-    const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
-    if (identity.name) newUser.name = identity.name;
-    if (identity.email) newUser.email = identity.email;
-    const userId = await ctx.db.insert("users", newUser);
-    return await ctx.db.get(userId);
-  }
-
-  // If running in an action context (no db), use runMutation/runQuery
-  if (ctx.runQuery && ctx.runMutation) {
-    await ctx.runMutation(api.users.store);
-    const user = await ctx.runQuery(api.users.currentUser);
-    if (!user) {
-      throw new Error("User not found after store");
-    }
-    return user;
-  }
-
-  throw new Error("Unsupported context for getOrCreateCurrentUser");
-}
+import { getOrCreateUser } from "./utils";
 
 // AI response generation with OpenRouter or OpenAI
 async function generateAIResponse(userMessage: string, ctx: any) {
@@ -278,7 +241,7 @@ function extractAvailableMinutes(message: string): number | undefined {
   return undefined;
 }
 
-export const sendChatMessage: any = action({
+export const sendChatMessage = action({
   args: { message: v.string(), sessionId: v.optional(v.id("chatSessions")) },
   handler: async (ctx, args) => {
     const user = await getOrCreateCurrentUser(ctx);

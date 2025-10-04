@@ -42,8 +42,8 @@ export async function getOrCreateUser(ctx: AnyCtx): Promise<Doc<"users">> {
 
   // Action context: use runQuery/runMutation to interact with DB
   if ("runQuery" in ctx && "runMutation" in ctx) {
-    await ctx.runMutation(api.users.store, {} as any);
-    const user = await ctx.runQuery(api.users.currentUser, {} as any);
+    await ctx.runMutation(api.users.store);
+    const user = await ctx.runQuery(api.users.currentUser);
     if (!user) throw new Error("User not found after store");
     return user as Doc<"users">;
   }
@@ -69,7 +69,7 @@ export async function getCurrentUserOrNull(
   }
 
   if ("runQuery" in ctx) {
-    const user = await (ctx as ActionCtx).runQuery(api.users.currentUser, {} as any);
+    const user = await (ctx as ActionCtx).runQuery(api.users.currentUser);
     return (user as Doc<"users">) ?? null;
   }
 

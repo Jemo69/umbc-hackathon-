@@ -154,7 +154,7 @@ const ChatInterface = () => {
     api.chat.getChatHistory,
     isAuthenticated ? (activeSessionId ? { sessionId: activeSessionId as Id<"chatSessions"> } : {}) : "skip"
   );
-  const sendMessage = useAction(api.chat.sendChatMessage);
+  const sendMessage = useAction(api.ai.sendChatMessage);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

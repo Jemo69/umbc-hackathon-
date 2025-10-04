@@ -1,40 +1,7 @@
 import { query, mutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
-
-// Helper: get or create the current authenticated user (works for queries/mutations and actions)
-async function getOrCreateCurrentUser(ctx: any): Promise<any> {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
-    throw new Error("Not authenticated");
-  }
-
-  if (ctx.db) {
-    let user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q: any) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
-      )
-      .unique();
-
-    if (user) return user;
-
-    const newUser: any = { tokenIdentifier: identity.tokenIdentifier };
-    if (identity.name) newUser.name = identity.name;
-    if (identity.email) newUser.email = identity.email;
-    const userId = await ctx.db.insert("users", newUser);
-    return await ctx.db.get(userId);
-  }
-
-  if (ctx.runQuery && ctx.runMutation) {
-    await ctx.runMutation(api.users.store);
-    const user = await ctx.runQuery(api.users.currentUser);
-    if (!user) throw new Error("User not found after store");
-    return user;
-  }
-
-  throw new Error("Unsupported context for getOrCreateCurrentUser");
-}
+import { getOrCreateUser } from "./utils";
 
 export const getDocuments = query({
   handler: async (ctx) => {
@@ -54,24 +21,30 @@ export const setDocumentAnalysis = mutation({
     analysisStatus: v.string(),
     extractedData: v.object({
       summary: v.optional(v.string()),
-      assignments: v.array(
-        v.object({
-          title: v.string(),
-          description: v.optional(v.string()),
-          dueDate: v.optional(v.number()),
-          priority: v.optional(v.number()),
-        })
+      assignments: v.optional(
+        v.array(
+          v.object({
+            title: v.string(),
+            description: v.optional(v.string()),
+            dueDate: v.optional(v.number()),
+            priority: v.optional(v.number()),
+          })
+        )
       ),
-      keyConcepts: v.array(v.string()),
-      deadlines: v.array(
-        v.object({ title: v.string(), date: v.number(), type: v.string() })
+      keyConcepts: v.optional(v.array(v.string())),
+      deadlines: v.optional(
+        v.array(
+          v.object({ title: v.string(), date: v.number(), type: v.string() })
+        )
       ),
-      studyQuestions: v.array(
-        v.object({
-          question: v.string(),
-          answer: v.optional(v.string()),
-          difficulty: v.optional(v.string()),
-        })
+      studyQuestions: v.optional(
+        v.array(
+          v.object({
+            question: v.string(),
+            answer: v.optional(v.string()),
+            difficulty: v.optional(v.string()),
+          })
+        )
       ),
     }),
   },
